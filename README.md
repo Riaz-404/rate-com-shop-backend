@@ -1,1 +1,3 @@
-"# rate-com-shop-backend" 
+# rate-com-shop-backend
+
+An e-commerce platform
