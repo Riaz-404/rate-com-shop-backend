@@ -16,6 +16,6 @@ app.use(
 app.use(express.static("public"));
 
 app.use("/api/v1/health-check", healthCheckController);
-app.use("/api/v1/", userRouter);
+app.use("/api/v1/user", userRouter);
 
 export default app;

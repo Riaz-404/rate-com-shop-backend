@@ -2,4 +2,7 @@
 
 An e-commerce platform
 
-Post
+Features:
+-
+
+- Stored encrypted user password in Database
