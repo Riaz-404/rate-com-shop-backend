@@ -6,3 +6,4 @@ Features:
 -
 
 - Stored encrypted user password in Database
+- User registration
