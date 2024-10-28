@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { healthCheckController } from "./controllers/healthCheck.controller.js";
 import { userRouter } from "./routes/user.route.js";
 import { productRouter } from "./routes/product.route.js";
@@ -14,6 +15,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(cookieParser());
 app.use(express.static("public"));
 
 app.use("/api/v1/health-check", healthCheckController);

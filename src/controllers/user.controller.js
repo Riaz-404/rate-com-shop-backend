@@ -94,4 +94,27 @@ const handleLoginUser = asyncHandler(async (req, res) => {
     );
 });
 
-export { handleRegisterUser, handleLoginUser };
+const handleUserDetails = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  const user = await User.findById(userId).select("-password -refreshToken");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+      "Request completed",
+    ),
+  );
+});
+
+export { handleRegisterUser, handleLoginUser, handleUserDetails };
