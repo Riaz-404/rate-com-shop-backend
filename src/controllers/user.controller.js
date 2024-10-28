@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
+import jwt from "jsonwebtoken";
 
 const generateAccessTokenAndRefreshToken = async (user) => {
   const accessToken = await user.generateAccessToken();
@@ -96,7 +97,7 @@ const handleLoginUser = asyncHandler(async (req, res) => {
 
 const handleUserDetails = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-
+  // const userId = req.params.id;
   const user = await User.findById(userId).select("-password -refreshToken");
 
   if (!user) {
@@ -117,4 +118,38 @@ const handleUserDetails = asyncHandler(async (req, res) => {
   );
 });
 
-export { handleRegisterUser, handleLoginUser, handleUserDetails };
+const handleRefreshAccessToken = asyncHandler(async (req, res) => {
+  const token = req.cookies?.token;
+
+  if (!token) {
+    throw new ApiError(401, "Unauthorized request");
+  }
+
+  try {
+    const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded?.id);
+
+    if (user.refreshToken === token) {
+      const { accessToken, refreshToken } =
+        await generateAccessTokenAndRefreshToken(user);
+
+      return res
+        .status(200)
+        .cookie("auth", accessToken)
+        .cookie("token", refreshToken)
+        .json(new ApiResponse(200, null, "Refreshed accessed token"));
+    } else {
+      new ApiError(400, "Invalid token");
+    }
+  } catch (e) {
+    throw new ApiError(400, e.message);
+  }
+});
+
+export {
+  handleRegisterUser,
+  handleLoginUser,
+  handleUserDetails,
+  handleRefreshAccessToken,
+};
