@@ -126,7 +126,7 @@ const handleRefreshAccessToken = asyncHandler(async (req, res) => {
   }
 
   try {
-    const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = await jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
 
     const user = await User.findById(decoded?.id);
 
