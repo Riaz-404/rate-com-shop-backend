@@ -3,6 +3,19 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 
+const generateAccessTokenAndRefreshToken = async (user) => {
+  const accessToken = await user.generateAccessToken();
+  const refreshToken = await user.generateRefreshToken();
+
+  await User.findOneAndUpdate(user._id, {
+    refreshToken: refreshToken,
+  }).catch((error) => {
+    throw new ApiError(500, error.message);
+  });
+
+  return { accessToken, refreshToken };
+};
+
 const handleRegisterUser = asyncHandler(async (req, res) => {
   const { fullName, email, password, role } = req.body;
 
@@ -18,17 +31,25 @@ const handleRegisterUser = asyncHandler(async (req, res) => {
 
   const user = await User.create({ fullName, email, password, role });
 
-  return res.status(201).json(
-    new ApiResponse(
-      201,
-      {
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-      },
-      "User created successfully",
-    ),
-  );
+  const { accessToken, refreshToken } =
+    await generateAccessTokenAndRefreshToken(user);
+
+  return res
+    .status(201)
+    .cookie("auth", accessToken)
+    .cookie("token", refreshToken)
+    .json(
+      new ApiResponse(
+        201,
+        {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+        },
+        "User created successfully",
+      ),
+    );
 });
 
 const handleLoginUser = asyncHandler(async (req, res) => {
@@ -46,21 +67,31 @@ const handleLoginUser = asyncHandler(async (req, res) => {
 
   const verifyPassword = await user.isPasswordCorrect(password);
 
-  if (!verifyPassword) throw new ApiError(400, "Password incorrect");
+  if (!verifyPassword) {
+    throw new ApiError(401, "Password incorrect");
+  }
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        user: {
-          fullName: user.fullName,
-          email: user.email,
-          role: user.role,
+  const { accessToken, refreshToken } =
+    await generateAccessTokenAndRefreshToken(user);
+
+  return res
+    .status(200)
+    .cookie("auth", accessToken)
+    .cookie("token", refreshToken)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: {
+            id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            role: user.role,
+          },
         },
-      },
-      "User logged in successfully",
-    ),
-  );
+        "User logged in successfully",
+      ),
+    );
 });
 
 export { handleRegisterUser, handleLoginUser };
